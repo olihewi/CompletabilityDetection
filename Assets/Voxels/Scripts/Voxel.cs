@@ -8,5 +8,6 @@ namespace Voxels
     public class Voxel : ScriptableObject
     {
         public bool isAir = false;
+        public Texture2D[] textures = new Texture2D[6];
     }
 }
