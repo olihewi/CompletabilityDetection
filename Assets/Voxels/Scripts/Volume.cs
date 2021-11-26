@@ -14,16 +14,21 @@ namespace Voxels
         [Serializable]
         public class VoxelDict : SerializableDictionary<Vector3Int, Voxel> {}
 
-        public Voxel block;
+        [HideInInspector] public Voxel[] palette;
         [HideInInspector] public VoxelDict voxels = new VoxelDict();
 
         [SerializeField][HideInInspector] private MeshFilter meshFilter;
         [SerializeField][HideInInspector] private MeshCollider meshCollider;
+        [SerializeField] [HideInInspector] private MeshRenderer meshRenderer;
         private void Reset()
         {
+            palette = Resources.LoadAll<Voxel>("Types");
             meshCollider = GetComponent<MeshCollider>();
             meshFilter = GetComponent<MeshFilter>();
-            if (voxels.Count == 0) PlaceVoxel(Vector3Int.zero);
+            meshRenderer = GetComponent<MeshRenderer>();
+            meshRenderer.material = Resources.Load<Material>("Materials/Atlas");
+            PackTextures();
+            if (voxels.Count == 0) PlaceVoxel(Vector3Int.zero, palette[0]);
         }
         
         private List<Vector3> v = new List<Vector3>();
@@ -48,55 +53,52 @@ namespace Voxels
             mesh.RecalculateNormals();
         }
 
-        public struct Face
+        public void PackTextures()
         {
-            public Face(Vector3Int _direction, Vector3[] _vertices)
+            List<Texture2D> texturesToPack = new List<Texture2D>();
+            foreach (Voxel voxel in palette)
             {
-                direction = _direction;
-                vertices = _vertices;
+                foreach (Texture2D texture in voxel.textures)
+                {
+                    if (texturesToPack.Contains(texture)) continue;
+                    texturesToPack.Add(texture);
+                }
             }
-            public Vector3Int direction;
-            public Vector3[] vertices;
-            public static Face[] faces = 
+            Texture2D atlas = new Texture2D(1024,1024);
+            atlas.filterMode = FilterMode.Point;
+            Rect[] rects = atlas.PackTextures(texturesToPack.ToArray(), 0, 1024);
+            Dictionary<Texture2D, Rect> lookup = new Dictionary<Texture2D, Rect>();
+            for (int i = 0; i < rects.Length; i++)
             {
-                new Face(Vector3Int.up, new [] { new Vector3(-0.5F, 0.5F, -0.5F), new Vector3(-0.5F, 0.5F, 0.5F), new Vector3(0.5F, 0.5F, 0.5F), new Vector3(0.5F, 0.5F, -0.5F) }),
-                new Face(Vector3Int.down, new [] { new Vector3(-0.5F, -0.5F, -0.5F), new Vector3(0.5F, -0.5F, -0.5F), new Vector3(0.5F, -0.5F, 0.5F), new Vector3(-0.5F, -0.5F, 0.5F) }),
-                new Face(Vector3Int.forward, new [] { new Vector3(0.5F, -0.5F, 0.5F), new Vector3(0.5F, 0.5F, 0.5F), new Vector3(-0.5F, 0.5F, 0.5F), new Vector3(-0.5F, -0.5F, 0.5F) }),
-                new Face(Vector3Int.back, new [] { new Vector3(-0.5F, -0.5F, -0.5F), new Vector3(-0.5F, 0.5F, -0.5F), new Vector3(0.5F, 0.5F, -0.5F), new Vector3(0.5F, -0.5F, -0.5F) }),
-                new Face(Vector3Int.left, new [] { new Vector3(-0.5F, -0.5F, 0.5F), new Vector3(-0.5F, 0.5F, 0.5F), new Vector3(-0.5F, 0.5F, -0.5F), new Vector3(-0.5F, -0.5F, -0.5F) }),
-                new Face(Vector3Int.right, new [] { new Vector3(0.5F, -0.5F, -0.5F), new Vector3(0.5F, 0.5F, -0.5F), new Vector3(0.5F, 0.5F, 0.5F), new Vector3(0.5F, -0.5F, 0.5F) })
-            };
+                lookup.Add(texturesToPack[i],rects[i]);
+            }
+            foreach (Voxel voxel in palette)
+            {
+                voxel.uvs = new List<Rect>();
+                foreach (Texture2D texture in voxel.textures)
+                {
+                    voxel.uvs.Add(lookup[texture]);
+                }
+            }
+            meshRenderer.sharedMaterial.mainTexture = atlas;
         }
+        
         private void AddVoxel(KeyValuePair<Vector3Int, Voxel> voxel)
         {
-            Vector3 thisPos = voxel.Key;
-            int faceCounter = 0;
-            // Vertices
-            foreach (Face face in Face.faces)
+            bool[] neighbours = new bool[6];
+            foreach (Voxel.Face face in Voxel.Face.faces)
             {
-                if (voxels.ContainsKey(voxel.Key + face.direction)) continue;
-                foreach (Vector3 vertex in face.vertices)
-                {
-                    v.Add(thisPos + vertex);
-                }
-                faceCounter++;
+                neighbours[face.index] = voxels.ContainsKey(voxel.Key + face.direction);
             }
-            // Triangles
-            int vertCountOffset = v.Count - 4 * faceCounter; // Gets this block's vertices' offset from the start of the list
-            for (int i = 0; i < faceCounter; i++)
-            {
-                t.Add(vertCountOffset + i * 4);
-                t.Add(vertCountOffset + i * 4 + 1);
-                t.Add(vertCountOffset + i * 4 + 2); // Tri 1
-                t.Add(vertCountOffset + i * 4);
-                t.Add(vertCountOffset + i * 4 + 2);
-                t.Add(vertCountOffset + i * 4 + 3); // Tri 2
-            }
+            Voxel.MeshData meshData = voxel.Value.GetVoxel(voxel.Key, neighbours, v.Count);
+            v.AddRange(meshData.vertices);
+            t.AddRange(meshData.triangles);
+            u.AddRange(meshData.uvs);
         }
 
-        public void PlaceVoxel(Vector3Int _position)
+        public void PlaceVoxel(Vector3Int _position, Voxel _voxel)
         {
-            voxels.Add(_position,block);
+            voxels.Add(_position, _voxel);
             GenerateMesh();
         }
 
@@ -104,6 +106,12 @@ namespace Voxels
         {
             if (voxels.Count <= 1) return;
             voxels.Remove(_position);
+            GenerateMesh();
+        }
+
+        public void ReplaceVoxel(Vector3Int _position, Voxel _voxel)
+        {
+            voxels[_position] = _voxel;
             GenerateMesh();
         }
 

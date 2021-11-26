@@ -9,6 +9,7 @@ namespace Voxels
     [CustomEditor(typeof(Volume))]
     public class VolumeEditor : Editor
     {
+        public Volume volume { get { return (Volume) target; } }
         public enum ToolMode
         {
             Transform,
@@ -23,6 +24,7 @@ namespace Voxels
             Remove
         }
         private BuildMode buildMode = BuildMode.Place;
+        private int selectedVoxel = 0;
 
         private class Selection
         {
@@ -38,7 +40,7 @@ namespace Voxels
             if (toolMode == ToolMode.Building)
             {
                 buildMode = (BuildMode) GUI.Toolbar(new Rect(10, 50, 200, 30), (int) buildMode, new[] {"Place", "Replace", "Remove"});
-                GUI.Window(0, new Rect(10, 120, 200, 400), PaletteWindow, "Pallete");
+                GUI.Window(0, new Rect(10, 120, 200, SceneView.lastActiveSceneView.position.height - 140), PaletteWindow, "Palette");
             }
             Handles.EndGUI();
 
@@ -52,33 +54,47 @@ namespace Voxels
 
             if (toolMode == ToolMode.Building)
             {
-                Selection selection = GetSelectionAt(e.mousePosition);
-                if (selection != null)
+                Building(e);
+            }
+            UnityEditor.Selection.activeGameObject = volume.gameObject;
+        }
+
+        private void Building(Event e)
+        {
+            buildMode = e.type switch
+            {
+                EventType.KeyDown when e.keyCode == KeyCode.LeftShift => BuildMode.Remove,
+                EventType.KeyUp when e.keyCode == KeyCode.LeftShift => BuildMode.Place,
+                EventType.KeyDown when e.keyCode == KeyCode.LeftControl => BuildMode.Replace,
+                EventType.KeyUp when e.keyCode == KeyCode.LeftControl => BuildMode.Place,
+                _ => buildMode
+            };
+
+            Selection selection = GetSelectionAt(e.mousePosition);
+            if (selection != null)
+            {
+                DrawFace(selection, buildMode == BuildMode.Place ? Color.green : buildMode == BuildMode.Replace ? Color.yellow : Color.red);
+                EditorGUI.EndChangeCheck();
+                if (e.type == EventType.MouseDown && e.button == 0)
                 {
-                    DrawFace(selection, buildMode == BuildMode.Place ? Color.green : buildMode == BuildMode.Replace ? Color.yellow : Color.red);
-                    EditorGUI.EndChangeCheck();
-                    if (e.type == EventType.MouseDown && e.button == 0)
+                    Undo.RecordObject(target, "EditMesh");
+                    switch (buildMode)
                     {
-                        Undo.RecordObject(target,"EditMesh");
-                        switch (buildMode)
-                        {
-                            case BuildMode.Place:
-                                ((Volume) target).PlaceVoxel(selection.tile + selection.face.Floor());
-                                SceneView.lastActiveSceneView.camera.transform.position += selection.face;
-                                break;
-                            case BuildMode.Replace:
-                                break;
-                            case BuildMode.Remove:
-                                ((Volume) target).RemoveVoxel(selection.tile);
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-                        EditorUtility.SetDirty(target);
+                        case BuildMode.Place:
+                            volume.PlaceVoxel(selection.tile + selection.face.Floor(), volume.palette[selectedVoxel]);
+                            break;
+                        case BuildMode.Replace:
+                            volume.ReplaceVoxel(selection.tile, volume.palette[selectedVoxel]);
+                            break;
+                        case BuildMode.Remove:
+                            volume.RemoveVoxel(selection.tile);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
             }
-            UnityEditor.Selection.activeGameObject = ((Volume) target).gameObject;
+            else if (e.type == EventType.MouseDown && e.button == 0) toolMode = ToolMode.Transform;
         }
 
         private Selection GetSelectionAt(Vector2 _position)
@@ -87,9 +103,9 @@ namespace Voxels
             RaycastHit hit;
             if (!Physics.Raycast(ray, out hit)) return null;
             Volume other = hit.collider.gameObject.GetComponent<Volume>();
-            if (other == (Volume) target)
+            if (other == volume)
             {
-                return new Selection()
+                return new Selection
                 {
                     tile = (other.transform.InverseTransformPoint(hit.point - hit.normal * 0.5F) + Vector3.one * 0.5F).Floor(),
                     face = other.transform.InverseTransformDirection(hit.normal)
@@ -100,7 +116,6 @@ namespace Voxels
 
         private void DrawFace(Selection face, Color _color, float thickness = 3.0F)
         {
-            Volume volume = (Volume) target;
             Vector3 normal = volume.transform.TransformDirection(face.face);
             Vector3 front = volume.transform.TransformPoint(face.tile.Float()) + normal * 0.51F;
             Vector3 upDown = Vector3.Cross(normal, face.face.y == 0 ? volume.transform.up : volume.transform.right);
@@ -118,7 +133,13 @@ namespace Voxels
 
         private void PaletteWindow(int id)
         {
-            
+            Texture2D[] textures = new Texture2D[volume.palette.Length];
+            for (int i = 0; i < textures.Length; i++)
+            {
+                textures[i] = volume.palette[i].textures[0];
+            }
+            selectedVoxel = GUI.SelectionGrid(new Rect(10, 25, 180, 50*textures.Length/4), selectedVoxel, textures, 4);
+            if (GUI.Button(new Rect(10, 650, 180, 30), "Reload")) volume.PackTextures();
         }
 
         private void OnEnable()
@@ -131,7 +152,7 @@ namespace Voxels
         }
         private void OnUndoRedo()
         {
-            ((Volume) target).GenerateMesh();
+            volume.GenerateMesh();
         }
     }
 }
