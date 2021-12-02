@@ -4,20 +4,19 @@ using UnityEngine;
 
 namespace Game
 {
-  [RequireComponent(typeof(Rigidbody))]
-  [RequireComponent(typeof(CapsuleCollider))]
+  [RequireComponent(typeof(CharacterController))]
   public class Player : MonoBehaviour
   {
     public List<PlayerAbility> abilities;
     public Transform cameraPivot;
 
-    [HideInInspector] public Rigidbody rb;
-    [HideInInspector] public CapsuleCollider cc;
+    [HideInInspector] public CharacterController controller;
+    [HideInInspector] public Animator animator;
 
     private void Awake()
     {
-      rb = GetComponent<Rigidbody>();
-      cc = GetComponent<CapsuleCollider>();
+      controller = GetComponent<CharacterController>();
+      animator = GetComponentInChildren<Animator>();
     }
 
     private void Update()
@@ -26,20 +25,14 @@ namespace Game
       {
         ability.Perform(this);
       }
-
-      grounded = Physics.CheckCapsule(cc.bounds.center, new Vector3(cc.bounds.center.x, cc.bounds.min.y - 0.1F, cc.bounds.center.z), cc.radius, ~(1 << 6));
+      Move();
     }
 
-    private bool grounded;
+    public Vector3 velocity;
 
-    public bool isGrounded
+    private void Move()
     {
-      get { return grounded; }
-    }
-
-    public bool wasGrounded
-    {
-      get { return isGrounded && !Physics.CheckCapsule(cc.bounds.center, new Vector3(cc.bounds.center.x, cc.bounds.min.y - 0.1F, cc.bounds.center.z), cc.radius, ~(1 << 6)); }
+      controller.Move(velocity * Time.deltaTime);
     }
   }
 }

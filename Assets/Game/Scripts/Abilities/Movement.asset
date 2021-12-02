@@ -68,3 +68,4 @@ MonoBehaviour:
       m_Groups: 
       m_Action: Input
       m_Flags: 8
+  speed: 6

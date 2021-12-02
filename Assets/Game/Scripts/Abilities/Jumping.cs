@@ -20,10 +20,10 @@ namespace Game.Abilities
   
     public override void Perform(Player _player)
     {
-      if (_player.wasGrounded)
+      /*if (_player.wasGrounded)
       {
         _player.rb.AddForce(Vector3.up * height, ForceMode.VelocityChange);
-      }
+      }*/
     }
   }
 }
