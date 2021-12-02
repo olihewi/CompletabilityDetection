@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bade88d684b3f824faf2bace742e7d09, type: 3}
   m_Name: Movement
   m_EditorClassIdentifier: 
-  input:
+  movement:
     m_Name: Input
     m_Type: 0
-    m_ExpectedControlType: 
+    m_ExpectedControlType: Vector2
     m_Id: 32bb68d9-b5bb-42d9-b5c4-c85ab91ee4dc
     m_Processors: 
     m_Interactions: 
@@ -68,4 +68,23 @@ MonoBehaviour:
       m_Groups: 
       m_Action: Input
       m_Flags: 8
-  speed: 6
+  walk:
+    m_Name: Walk
+    m_Type: 0
+    m_ExpectedControlType: Analog
+    m_Id: ad744dc3-92db-4939-ab9f-477fb52cfd22
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: aa14a0b9-5d3b-44ee-880b-98a1270fa2fa
+      m_Path: <Keyboard>/leftShift
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Walk
+      m_Flags: 0
+  speed: 5
+  airMultiplier: 0.25
+  acceleration: 4
+  gravity: 9.81
