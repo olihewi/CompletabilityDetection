@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 741af1d6b0f6df34f95508e4e9243dd6, type: 3}
+  m_Name: Yellow Light
+  m_EditorClassIdentifier: 
+  uvs:
+  - serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  textures: []
+  hasGameObject: 1
+  gameObject: {fileID: 8022845136533898875, guid: 5f920bc94e8ffe64ea7343666c75b11c, type: 3}

@@ -4,15 +4,23 @@ using UnityEngine;
 
 namespace Voxels
 {
-  [CreateAssetMenu(fileName = "New Voxel Type", menuName = "Voxels/Types/Basic")]
+  [CreateAssetMenu(fileName = "New Voxel Type", menuName = "Voxels/Basic")]
   public class Voxel : ScriptableObject
   {
-    public List<Rect> uvs;
+    [HideInInspector] public List<Rect> uvs;
     public Texture2D[] textures = new Texture2D[1];
+    public bool hasGameObject = false;
+    public GameObject gameObject;
 
 
-    public struct MeshData
+    public class MeshData
     {
+      public MeshData()
+      {
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+        uvs = new List<Vector2>();
+      }
       public List<Vector3> vertices;
       public List<int> triangles;
       public List<Vector2> uvs;
@@ -44,10 +52,26 @@ namespace Voxels
 
     public virtual MeshData GetVoxel(Vector3 pos, bool[] neighbours, int offset)
     {
-      MeshData meshData;
-      meshData.vertices = new List<Vector3>();
-      meshData.triangles = new List<int>();
-      meshData.uvs = new List<Vector2>();
+      MeshData meshData = GetCollisionVoxel(pos, neighbours, offset);
+      int i = 0;
+      foreach (Face face in Face.faces)
+      {
+        if (neighbours[i++]) continue;
+        Rect thisUv = uvs[0];
+        meshData.uvs.AddRange(new[]
+        {
+          new Vector2(thisUv.x, thisUv.y),
+          new Vector2(thisUv.x, thisUv.y + thisUv.height),
+          new Vector2(thisUv.x + thisUv.width, thisUv.y + thisUv.height),
+          new Vector2(thisUv.x + thisUv.width, thisUv.y),
+        });
+      }
+      return meshData;
+    }
+
+    public virtual MeshData GetCollisionVoxel(Vector3 pos, bool[] neighbours, int offset)
+    {
+      MeshData meshData = new MeshData();
       int i = 0;
       int faceCounter = 0;
       foreach (Face face in Face.faces)
@@ -57,15 +81,7 @@ namespace Voxels
         {
           meshData.vertices.Add(pos + vertex);
         }
-
-        Rect thisUv = uvs[0];
-        meshData.uvs.AddRange(new[]
-        {
-          new Vector2(thisUv.x, thisUv.y),
-          new Vector2(thisUv.x, thisUv.y + thisUv.height),
-          new Vector2(thisUv.x + thisUv.width, thisUv.y + thisUv.height),
-          new Vector2(thisUv.x + thisUv.width, thisUv.y),
-        });
+        
         faceCounter++;
       }
 

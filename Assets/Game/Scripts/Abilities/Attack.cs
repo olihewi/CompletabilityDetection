@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace Game.Abilities
 {
-    [CreateAssetMenu(fileName = "Attack", menuName = "Player Abilities/Attack")]
+    [Serializable]
     public class Attack : PlayerAbility
     {
         public InputAction attack;

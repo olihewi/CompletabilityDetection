@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace Game.Abilities
 {
-  [CreateAssetMenu(fileName = "Looking", menuName = "Player Abilities/Looking")]
+  [Serializable]
   public class Looking : PlayerAbility
   {
     public InputAction look;

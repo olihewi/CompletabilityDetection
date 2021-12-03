@@ -1,9 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Game.Abilities
 {
-  [CreateAssetMenu(fileName = "Movement", menuName = "Player Abilities/Movement")]
+  [Serializable]
   public class Movement : PlayerAbility
   {
     public InputAction movement;
@@ -38,7 +39,7 @@ namespace Game.Abilities
       
       // Gravity
       _player.velocity.y -= gravity * Time.deltaTime;
-      if (_player.controller.isGrounded) _player.velocity.y = -gravity * Time.deltaTime;
+      if (_player.controller.isGrounded && _player.velocity.y < 0.0F) _player.velocity.y = -gravity * Time.deltaTime;
       
       // Animation
       Vector3 horizontalVelocity = new Vector3(_player.velocity.x,0.0F,_player.velocity.z);

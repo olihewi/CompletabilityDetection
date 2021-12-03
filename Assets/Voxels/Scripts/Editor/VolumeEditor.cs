@@ -143,13 +143,21 @@ namespace Voxels
 
     private void PaletteWindow(int id)
     {
-      Texture2D[] textures = new Texture2D[volume.palette.Length];
-      for (int i = 0; i < textures.Length; i++)
+      GUIContent[] contents = new GUIContent[volume.palette.Length];
+      for (int i = 0; i < contents.Length; i++)
       {
-        textures[i] = volume.palette[i].textures[0];
+        contents[i] = new GUIContent {tooltip = volume.palette[i].name};
+        if (volume.palette[i].textures.Length == 0)
+        {
+          contents[i].text = volume.palette[i].name;
+          continue;
+        }
+        contents[i].image = volume.palette[i].textures[0];
       }
-
-      selectedVoxel = GUI.SelectionGrid(new Rect(10, 25, 180, 50 * textures.Length / 4), selectedVoxel, textures, 4);
+      GUIStyle style = GUI.skin.button;
+      style.fontSize = 10;
+      style.wordWrap = true;
+      selectedVoxel = GUI.SelectionGrid(new Rect(10, 25, 180, 50 * contents.Length / 4), selectedVoxel, contents, 4, style);
       if (GUI.Button(new Rect(10, windowRect.height - 40, 180, 30), "Reload")) volume.PackTextures();
     }
 
