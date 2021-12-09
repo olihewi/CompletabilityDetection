@@ -24,7 +24,7 @@ namespace Game
       abilities.AddRange(GetComponentsInChildren<PlayerAbility>());
     }
 
-    private void Awake()
+    private void OnEnable()
     {
       controller = GetComponent<CharacterController>();
       animator = GetComponentInChildren<Animator>();

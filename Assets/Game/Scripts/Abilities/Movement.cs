@@ -48,19 +48,33 @@ namespace Game.Abilities
       _player.animator.SetBool(ANIM_GROUNDED, _player.controller.isGrounded);
       if (horizontalVelocity.magnitude > 0.1F) _player.animator.transform.rotation = Quaternion.LookRotation(horizontalVelocity);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> completabilityGrid, Voxels.Volume _volume)
+    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       Dictionary<Vector3Int, float> toAdd = new Dictionary<Vector3Int, float>();
-      foreach(KeyValuePair<Vector3Int, float> tile in completabilityGrid)
+      Vector3Int[] directions = 
+      { Vector3Int.forward, Vector3Int.right, Vector3Int.back, Vector3Int.left,
+        //new Vector3Int(1,0,1), new Vector3Int(1,0,-1), new Vector3Int(-1,0,-1), new Vector3Int(-1,0,1)
+      };
+      foreach(KeyValuePair<Vector3Int, float> tile in _completabilityGrid)
       {
-        if (_volume.voxels.ContainsKey(tile.Key + Vector3Int.forward) && !completabilityGrid.ContainsKey(tile.Key + Vector3Int.forward) && !toAdd.ContainsKey(tile.Key + Vector3Int.forward))  toAdd.Add(tile.Key + Vector3Int.forward, tile.Value + 1.0F / speed);
-        if (_volume.voxels.ContainsKey(tile.Key + Vector3Int.back) && !completabilityGrid.ContainsKey(tile.Key + Vector3Int.back) && !toAdd.ContainsKey(tile.Key + Vector3Int.back)) toAdd.Add(tile.Key + Vector3Int.back, tile.Value + 1.0F / speed);
-        if (_volume.voxels.ContainsKey(tile.Key + Vector3Int.left) && !completabilityGrid.ContainsKey(tile.Key + Vector3Int.left) && !toAdd.ContainsKey(tile.Key + Vector3Int.left)) toAdd.Add(tile.Key + Vector3Int.left, tile.Value + 1.0F / speed);
-        if (_volume.voxels.ContainsKey(tile.Key + Vector3Int.right) && !completabilityGrid.ContainsKey(tile.Key + Vector3Int.right) && !toAdd.ContainsKey(tile.Key + Vector3Int.right)) toAdd.Add(tile.Key + Vector3Int.right, tile.Value + 1.0F / speed);
+        foreach (Vector3Int direction in directions)
+        {
+          Vector3Int voxel = tile.Key + direction;
+          if (_volume.voxels.ContainsKey(voxel) && !_completabilityGrid.ContainsKey(voxel) && !toAdd.ContainsKey(voxel))
+          {
+            bool shoudAdd = true;
+            for (int i = 1; i < _player.controller.height + 1.0F; i++)
+            {
+              if (_volume.voxels.ContainsKey(voxel + Vector3Int.up * i)) shoudAdd = false;
+            }
+            if (!shoudAdd) continue;
+            toAdd.Add(voxel, tile.Value + 1.0F/speed);
+          }
+        }
       }
       foreach(KeyValuePair<Vector3Int,float> i in toAdd)
       {
-        completabilityGrid.Add(i.Key,i.Value);
+        _completabilityGrid.Add(i.Key,i.Value);
       }
     }
   }

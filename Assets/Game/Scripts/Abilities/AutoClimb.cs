@@ -23,7 +23,7 @@ namespace Game.Abilities
         _player.velocity = new Vector3(_player.velocity.x, Mathf.Sqrt(-2.0F * -9.81F * (height + 0.1F)), _player.velocity.z);
       }
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _grid, Voxels.Volume _volume)
+    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       return;
     }

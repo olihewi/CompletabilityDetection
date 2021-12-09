@@ -20,7 +20,7 @@ namespace Game.Abilities
       }
       wasGrounded = isGrounded;
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _grid, Voxels.Volume _volume)
+    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       return;
     }

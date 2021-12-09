@@ -192,14 +192,16 @@ namespace Voxels
       completabilityGrid.Clear();
       completabilityGrid.Add(Vector3Int.zero, 0.0F);
       int lastCount = 0;
-      activeAbilities = GameObject.FindObjectOfType<Game.Player>().abilities;
+      Game.Player player = GameObject.FindObjectOfType<Game.Player>();
+      activeAbilities = player.abilities;
       while (completabilityGrid.Count > lastCount)
       {
         lastCount = completabilityGrid.Count;
         foreach (Game.Abilities.PlayerAbility ability in activeAbilities)
         {
-          ability.Traverse(completabilityGrid, volume);
+          ability.Traverse(completabilityGrid, volume, player);
         }
+        yield return new EditorWaitForSeconds(0.05F);
       }
       yield return null;
     }
@@ -215,7 +217,7 @@ namespace Voxels
           volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,+0.5F) + tile.Key),
           volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,-0.5F) + tile.Key),
         };
-        Handles.DrawSolidRectangleWithOutline(verts, new Color(0.0F, 1.0F, 0.0F, 0.5F), Color.clear);
+        Handles.DrawSolidRectangleWithOutline(verts, new Color(0.0F, 1.0F, 0.0F, 0.75F - tile.Value / 7.5F), Color.clear);
       }
     }
 

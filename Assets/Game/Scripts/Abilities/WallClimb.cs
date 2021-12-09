@@ -60,7 +60,7 @@ namespace Game.Abilities
       _player.animator.SetFloat(ANIM_CLIMBX, climbDirection.x);
       _player.animator.SetFloat(ANIM_CLIMBY, climbDirection.y);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _grid, Volume _volume)
+    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Volume _volume, Player _player)
     {
       return;
     }
