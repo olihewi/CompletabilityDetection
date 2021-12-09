@@ -79,6 +79,12 @@ namespace Game.Abilities
           if (_completabilityGrid.ContainsKey(otherTile.Key) || toAdd.ContainsKey(otherTile.Key)) continue;
           if ((new Vector3Int(otherTile.Key.x,0,otherTile.Key.z) - new Vector3Int(tile.Key.x,0,tile.Key.z)).magnitude <= tile.Key.y - otherTile.Key.y + 1.0F)
           {
+            bool shoudAdd = true;
+            for (int i = 1; i < _player.controller.height + 1.0F; i++)
+            {
+              if (_volume.voxels.ContainsKey(otherTile.Key + Vector3Int.up * i)) shoudAdd = false;
+            }
+            if (!shoudAdd) continue;
             toAdd.Add(otherTile.Key, tile.Value + 0.25F);
           }
         }

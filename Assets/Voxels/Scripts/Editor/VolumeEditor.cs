@@ -54,7 +54,7 @@ namespace Voxels
         paletteWindowRect = new Rect(10, 120, 200, SceneView.lastActiveSceneView.position.height - 140);
         GUI.Window(0, paletteWindowRect, PaletteWindow, "Palette");
       }
-      completabilityWindowRect = new Rect(windowSize.width - 170.0F, windowSize.height - 160.0F, 160.0F, 150.0F);
+      completabilityWindowRect = displayCompletability ? new Rect(windowSize.width - 170.0F, windowSize.height - 160.0F, 160.0F, 50.0F + activeAbilities.Count * 15.0F) : new Rect(windowSize.width - 170.0F, windowSize.height - 60.0F, 160.0F, 50.0F);
       GUI.Window(1, completabilityWindowRect, CompletabilityWindow, "Level Completability");
 
       Handles.EndGUI();
@@ -181,6 +181,7 @@ namespace Voxels
       if (newDisplayCompletability && !displayCompletability) GenerateCompletabilityGrid();
       displayCompletability = newDisplayCompletability;
       int i = 0;
+      if (!displayCompletability) return;
       foreach (Game.Player.AbilityInstance ability in activeAbilities)
       {
         bool newEnabled = GUI.Toggle(new Rect(20, 40 + i * 15, completabilityWindowRect.width - 30, 15), ability.enabled, ability.ability.GetType().Name);
