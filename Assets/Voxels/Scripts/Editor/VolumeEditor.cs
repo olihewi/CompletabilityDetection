@@ -177,29 +177,39 @@ namespace Voxels
     private bool displayCompletability = false;
     private void CompletabilityWindow(int id)
     {
-      bool newDisplayCompletability = GUI.Toggle(new Rect(10, 25, completabilityWindowRect.width - 20, 25), displayCompletability, " Enabled");
+      bool newDisplayCompletability = GUI.Toggle(new Rect(10, 25, completabilityWindowRect.width - 20, 10), displayCompletability, " Enabled");
       if (newDisplayCompletability && !displayCompletability) GenerateCompletabilityGrid();
       displayCompletability = newDisplayCompletability;
+      int i = 0;
+      foreach (Game.Player.AbilityInstance ability in activeAbilities)
+      {
+        bool newEnabled = GUI.Toggle(new Rect(20, 40 + i * 15, completabilityWindowRect.width - 30, 15), ability.enabled, ability.ability.GetType().Name);
+        if (newEnabled != ability.enabled) GenerateCompletabilityGrid();
+        ability.enabled = newEnabled;
+        i++;
+      }
     }
     private Dictionary<Vector3Int, float> completabilityGrid = new Dictionary<Vector3Int, float>();
     private void GenerateCompletabilityGrid()
     {
       EditorCoroutineUtility.StartCoroutine(CompletabilityGeneration(), this);
     }
-    private List<Game.Abilities.PlayerAbility> activeAbilities = new List<Game.Abilities.PlayerAbility>();
+    private Game.Player player;
+    private List<Game.Player.AbilityInstance> activeAbilities = new List<Game.Player.AbilityInstance>();
     private IEnumerator CompletabilityGeneration()
     {
       completabilityGrid.Clear();
       completabilityGrid.Add(Vector3Int.zero, 0.0F);
       int lastCount = 0;
-      Game.Player player = GameObject.FindObjectOfType<Game.Player>();
+      player = GameObject.FindObjectOfType<Game.Player>();
       activeAbilities = player.abilities;
       while (completabilityGrid.Count > lastCount)
       {
         lastCount = completabilityGrid.Count;
-        foreach (Game.Abilities.PlayerAbility ability in activeAbilities)
+        foreach (Game.Player.AbilityInstance ability in activeAbilities)
         {
-          ability.Traverse(completabilityGrid, volume, player);
+          if (!ability.enabled) continue;
+          ability.ability.Traverse(completabilityGrid, volume, player);
         }
         yield return new EditorWaitForSeconds(0.05F);
       }

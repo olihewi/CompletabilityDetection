@@ -57,6 +57,7 @@ namespace Game.Abilities
       };
       foreach(KeyValuePair<Vector3Int, float> tile in _completabilityGrid)
       {
+        // Horizontal Movement
         foreach (Vector3Int direction in directions)
         {
           Vector3Int voxel = tile.Key + direction;
@@ -69,6 +70,16 @@ namespace Game.Abilities
             }
             if (!shoudAdd) continue;
             toAdd.Add(voxel, tile.Value + 1.0F/speed);
+          }
+        }
+        // Gravity
+        foreach (KeyValuePair<Vector3Int, Voxels.Voxel> otherTile in _volume.voxels)
+        {
+          if (otherTile.Key.y >= tile.Key.y) continue;
+          if (_completabilityGrid.ContainsKey(otherTile.Key) || toAdd.ContainsKey(otherTile.Key)) continue;
+          if ((new Vector3Int(otherTile.Key.x,0,otherTile.Key.z) - new Vector3Int(tile.Key.x,0,tile.Key.z)).magnitude <= tile.Key.y - otherTile.Key.y + 1.0F)
+          {
+            toAdd.Add(otherTile.Key, tile.Value + 0.25F);
           }
         }
       }

@@ -8,7 +8,13 @@ namespace Game
   [RequireComponent(typeof(CharacterController))]
   public class Player : MonoBehaviour
   {
-    public List<PlayerAbility> abilities = new List<PlayerAbility>();
+    [System.Serializable]
+    public class AbilityInstance
+    {
+      public PlayerAbility ability;
+      public bool enabled = true;
+    }
+    public List<AbilityInstance> abilities = new List<AbilityInstance>();
     public Transform cameraPivot;
 
     [HideInInspector] public CharacterController controller;
@@ -21,7 +27,12 @@ namespace Game
     public void LoadAbilities()
     {
       abilities.Clear();
-      abilities.AddRange(GetComponentsInChildren<PlayerAbility>());
+      foreach (PlayerAbility ability in GetComponentsInChildren<PlayerAbility>())
+      {
+        AbilityInstance instance = new AbilityInstance();
+        instance.ability = ability;
+        abilities.Add(instance);
+      }
     }
 
     private void OnEnable()
@@ -42,9 +53,10 @@ namespace Game
       }
       else
       {
-        foreach (PlayerAbility ability in abilities)
+        foreach (AbilityInstance ability in abilities)
         {
-          ability.Perform(this);
+          if (!ability.enabled) continue;
+          ability.ability.Perform(this);
         }
       }
       Move();
