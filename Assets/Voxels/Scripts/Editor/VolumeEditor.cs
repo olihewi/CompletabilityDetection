@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,19 +39,23 @@ namespace Voxels
       public Vector3 face;
     }
 
-    private Rect windowRect;
+    private Rect paletteWindowRect;
+    private Rect completabilityWindowRect;
 
     protected virtual void OnSceneGUI()
     {
       Event e = Event.current;
       Handles.BeginGUI();
       toolMode = (ToolMode) GUI.Toolbar(new Rect(10, 10, 200, 30), (int) toolMode, new[] {"Transform", "Build"});
+      Rect windowSize = SceneView.lastActiveSceneView.position;
       if (toolMode == ToolMode.Building)
       {
         buildMode = (BuildMode) GUI.Toolbar(new Rect(10, 50, 200, 30), (int) buildMode, new[] {"Place", "Replace", "Remove"});
-        windowRect = new Rect(10, 120, 200, SceneView.lastActiveSceneView.position.height - 140);
-        GUI.Window(0, windowRect, PaletteWindow, "Palette");
+        paletteWindowRect = new Rect(10, 120, 200, SceneView.lastActiveSceneView.position.height - 140);
+        GUI.Window(0, paletteWindowRect, PaletteWindow, "Palette");
       }
+      completabilityWindowRect = new Rect(windowSize.width - 170.0F, windowSize.height - 160.0F, 160.0F, 150.0F);
+      GUI.Window(1, completabilityWindowRect, CompletabilityWindow, "Level Completability");
 
       Handles.EndGUI();
 
@@ -63,6 +70,11 @@ namespace Voxels
       if (toolMode == ToolMode.Building)
       {
         Building(e);
+      }
+
+      if (displayCompletability)
+      {
+        DrawCompletabilityGrid();
       }
 
       UnityEditor.Selection.activeGameObject = volume.gameObject;
@@ -101,6 +113,7 @@ namespace Voxels
             default:
               throw new ArgumentOutOfRangeException();
           }
+          if (displayCompletability) GenerateCompletabilityGrid();
         }
       }
       else if (e.type == EventType.MouseDown && e.button == 0) toolMode = ToolMode.Transform;
@@ -158,7 +171,52 @@ namespace Voxels
       style.fontSize = 10;
       style.wordWrap = true;
       selectedVoxel = GUI.SelectionGrid(new Rect(10, 25, 180, 50 * contents.Length / 4), selectedVoxel, contents, 4, style);
-      if (GUI.Button(new Rect(10, windowRect.height - 40, 180, 30), "Reload")) volume.PackTextures();
+      if (GUI.Button(new Rect(10, paletteWindowRect.height - 40, 180, 30), "Reload")) volume.PackTextures();
+    }
+
+    private bool displayCompletability = false;
+    private void CompletabilityWindow(int id)
+    {
+      bool newDisplayCompletability = GUI.Toggle(new Rect(10, 25, completabilityWindowRect.width - 20, 25), displayCompletability, " Enabled");
+      if (newDisplayCompletability && !displayCompletability) GenerateCompletabilityGrid();
+      displayCompletability = newDisplayCompletability;
+    }
+    private Dictionary<Vector3Int, float> completabilityGrid = new Dictionary<Vector3Int, float>();
+    private void GenerateCompletabilityGrid()
+    {
+      EditorCoroutineUtility.StartCoroutine(CompletabilityGeneration(), this);
+    }
+    private List<Game.Abilities.PlayerAbility> activeAbilities = new List<Game.Abilities.PlayerAbility>();
+    private IEnumerator CompletabilityGeneration()
+    {
+      completabilityGrid.Clear();
+      completabilityGrid.Add(Vector3Int.zero, 0.0F);
+      int lastCount = 0;
+      activeAbilities = GameObject.FindObjectOfType<Game.Player>().abilities;
+      while (completabilityGrid.Count > lastCount)
+      {
+        lastCount = completabilityGrid.Count;
+        foreach (Game.Abilities.PlayerAbility ability in activeAbilities)
+        {
+          ability.Traverse(completabilityGrid, volume);
+        }
+      }
+      yield return null;
+    }
+    private void DrawCompletabilityGrid()
+    {
+      Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
+      foreach (KeyValuePair<Vector3Int,float> tile in completabilityGrid)
+      {
+        Vector3[] verts =
+        {
+          volume.transform.TransformPoint(new Vector3(-0.5F,0.5F,-0.5F) + tile.Key),
+          volume.transform.TransformPoint(new Vector3(-0.5F,0.5F,+0.5F) + tile.Key),
+          volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,+0.5F) + tile.Key),
+          volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,-0.5F) + tile.Key),
+        };
+        Handles.DrawSolidRectangleWithOutline(verts, new Color(0.0F, 1.0F, 0.0F, 0.5F), Color.clear);
+      }
     }
 
     private void OnEnable()

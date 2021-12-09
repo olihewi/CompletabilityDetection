@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.InputSystem;
 
 namespace Game.Abilities
@@ -18,6 +19,10 @@ namespace Game.Abilities
         _player.velocity.y = Mathf.Sqrt(-2.0F * -9.81F * height);
       }
       wasGrounded = isGrounded;
+    }
+    public override void Traverse(Dictionary<Vector3Int, float> _grid, Voxels.Volume _volume)
+    {
+      return;
     }
   }
 }

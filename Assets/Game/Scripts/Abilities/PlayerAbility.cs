@@ -7,6 +7,6 @@ namespace Game.Abilities
   public abstract class PlayerAbility : MonoBehaviour
   {
     public abstract void Perform(Player _player);
-    //public abstract void Traverse(CompletabilityGrid _grid, VoxelLevel _level, Player _player);
+    public abstract void Traverse(Dictionary<Vector3Int, float> _grid, Voxels.Volume _volume);
   }
 }
