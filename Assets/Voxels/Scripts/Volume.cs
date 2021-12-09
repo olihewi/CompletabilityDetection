@@ -207,5 +207,11 @@ namespace Voxels
       }
       return new VoxelCastHit();
     }
+    [ContextMenu("Reload Volume List")]
+    public void ReloadVolumeList()
+    {
+      VOLUMES.Clear();
+      VOLUMES.AddRange(FindObjectsOfType<Volume>());
+    }
   }
 }

@@ -38,7 +38,7 @@ namespace Voxels
 
     private Rect windowRect;
 
-    private void OnSceneGUI()
+    protected virtual void OnSceneGUI()
     {
       Event e = Event.current;
       Handles.BeginGUI();
