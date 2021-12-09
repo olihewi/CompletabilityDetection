@@ -29,7 +29,7 @@ namespace Voxels
       meshCollider = GetComponent<MeshCollider>();
       meshFilter = GetComponent<MeshFilter>();
       meshRenderer = GetComponent<MeshRenderer>();
-      meshRenderer.material = new Material(Shader.Find("Standard"));
+      meshRenderer.material = new Material(Shader.Find("Ciberman/Texel Space Shading"));
       //meshRenderer.material = Resources.Load<Material>("Materials/Atlas");
       PackTextures();
       if (voxels.Count == 0) PlaceVoxel(Vector3Int.zero, palette[0]);
@@ -50,7 +50,10 @@ namespace Voxels
     private List<Vector2> u = new List<Vector2>();
     private List<Vector3> v_m = new List<Vector3>();
     private List<int> t_m = new List<int>();
+    private static readonly int BASE_MAP = Shader.PropertyToID("_BaseMap");
+    private static readonly int BASE_COLOR = Shader.PropertyToID("_BaseColor");
 
+    [ContextMenu("Generate Mesh")]
     public void GenerateMesh()
     {
       v.Clear();
@@ -108,7 +111,8 @@ namespace Voxels
         }
       }
 
-      meshRenderer.sharedMaterial.mainTexture = atlas;
+      meshRenderer.sharedMaterial.SetTexture(BASE_MAP,atlas);
+      meshRenderer.sharedMaterial.SetColor(BASE_COLOR,Color.white);
     }
 
     private void AddVoxel(KeyValuePair<Vector3Int, Voxel> voxel)

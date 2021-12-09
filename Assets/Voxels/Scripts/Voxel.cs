@@ -53,10 +53,9 @@ namespace Voxels
     public virtual MeshData GetVoxel(Vector3 pos, bool[] neighbours, int offset)
     {
       MeshData meshData = GetCollisionVoxel(pos, neighbours, offset);
-      int i = 0;
       foreach (Face face in Face.faces)
       {
-        if (neighbours[i++]) continue;
+        if (neighbours[face.index]) continue;
         Rect thisUv = uvs[0];
         meshData.uvs.AddRange(new[]
         {
@@ -72,11 +71,10 @@ namespace Voxels
     public virtual MeshData GetCollisionVoxel(Vector3 pos, bool[] neighbours, int offset)
     {
       MeshData meshData = new MeshData();
-      int i = 0;
       int faceCounter = 0;
       foreach (Face face in Face.faces)
       {
-        if (neighbours[i++]) continue;
+        if (neighbours[face.index]) continue;
         foreach (Vector3 vertex in face.vertices)
         {
           meshData.vertices.Add(pos + vertex);
