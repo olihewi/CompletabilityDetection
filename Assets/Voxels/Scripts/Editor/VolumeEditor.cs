@@ -67,15 +67,15 @@ namespace Voxels
 
       Tools.current = Tool.None;
 
+      if (displayCompletability)
+      {
+        DrawCompletabilityGrid();
+      }
       if (toolMode == ToolMode.Building)
       {
         Building(e);
       }
 
-      if (displayCompletability)
-      {
-        DrawCompletabilityGrid();
-      }
 
       UnityEditor.Selection.activeGameObject = volume.gameObject;
     }
@@ -152,6 +152,10 @@ namespace Voxels
       Handles.DrawLine(b, c, thickness);
       Handles.DrawLine(c, d, thickness);
       Handles.DrawLine(d, a, thickness);
+      GUIStyle style = new GUIStyle();
+      style.normal.textColor = Color.black;
+      if (displayCompletability)
+        Handles.Label(face.tile + normal * 2.0F,completabilityGrid.ContainsKey(face.tile) ? completabilityGrid[face.tile].ToString("F1") + "s" : "Unreachable", style);
     }
 
     private void PaletteWindow(int id)
@@ -212,7 +216,7 @@ namespace Voxels
           if (!ability.enabled) continue;
           ability.ability.Traverse(completabilityGrid, volume, player);
         }
-        yield return new EditorWaitForSeconds(0.05F);
+        //yield return new EditorWaitForSeconds(0.05F);
       }
       yield return null;
     }
@@ -221,6 +225,7 @@ namespace Voxels
       Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
       foreach (KeyValuePair<Vector3Int,float> tile in completabilityGrid)
       {
+        if (!volume.voxels.ContainsKey(tile.Key)) continue;
         Vector3[] verts =
         {
           volume.transform.TransformPoint(new Vector3(-0.5F,0.5F,-0.5F) + tile.Key),
@@ -228,7 +233,7 @@ namespace Voxels
           volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,+0.5F) + tile.Key),
           volume.transform.TransformPoint(new Vector3(+0.5F,0.5F,-0.5F) + tile.Key),
         };
-        Handles.DrawSolidRectangleWithOutline(verts, new Color(0.0F, 1.0F, 0.0F, 0.75F - tile.Value / 7.5F), Color.clear);
+        Handles.DrawSolidRectangleWithOutline(verts, new Color(0.0F, 1.0F, 0.0F, 0.5F/*0.75F - tile.Value / 7.5F*/), Color.clear);
       }
     }
 

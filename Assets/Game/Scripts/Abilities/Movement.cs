@@ -55,37 +55,61 @@ namespace Game.Abilities
       { Vector3Int.forward, Vector3Int.right, Vector3Int.back, Vector3Int.left,
         //new Vector3Int(1,0,1), new Vector3Int(1,0,-1), new Vector3Int(-1,0,-1), new Vector3Int(-1,0,1)
       };
+
+      float jumpHeight = 0.01F;
+      foreach (Player.AbilityInstance ability in _player.abilities)
+      {
+        if (ability.enabled && ability.ability is Jump jump)
+        {
+          jumpHeight = jump.height + _player.controller.radius;
+          break;
+        }
+      }
+      float vX = speed;
+      float vY = Mathf.Sqrt(-2.0F * -9.81F * jumpHeight);
+      float g = -Physics.gravity.y;
       foreach(KeyValuePair<Vector3Int, float> tile in _completabilityGrid)
       {
-        // Horizontal Movement
-        foreach (Vector3Int direction in directions)
-        {
-          Vector3Int voxel = tile.Key + direction;
-          if (_volume.voxels.ContainsKey(voxel) && !_completabilityGrid.ContainsKey(voxel) && !toAdd.ContainsKey(voxel))
-          {
-            bool shoudAdd = true;
-            for (int i = 1; i < _player.controller.height + 1.0F; i++)
-            {
-              if (_volume.voxels.ContainsKey(voxel + Vector3Int.up * i)) shoudAdd = false;
-            }
-            if (!shoudAdd) continue;
-            toAdd.Add(voxel, tile.Value + 1.0F/speed);
-          }
-        }
-        // Gravity
         foreach (KeyValuePair<Vector3Int, Voxels.Voxel> otherTile in _volume.voxels)
         {
-          if (otherTile.Key.y >= tile.Key.y) continue;
+          // If the tile is already reachable, continue.
           if (_completabilityGrid.ContainsKey(otherTile.Key) || toAdd.ContainsKey(otherTile.Key)) continue;
-          if ((new Vector3Int(otherTile.Key.x,0,otherTile.Key.z) - new Vector3Int(tile.Key.x,0,tile.Key.z)).magnitude <= tile.Key.y - otherTile.Key.y + 1.0F)
+          
+          // If the player can't fit, continue.
+          bool playerCantFit = false;
+          for (int i = 1; i < _player.controller.height + 1.0F; i++)
           {
-            bool shoudAdd = true;
-            for (int i = 1; i < _player.controller.height + 1.0F; i++)
+            if (_volume.voxels.ContainsKey(otherTile.Key + Vector3Int.up * i)) playerCantFit = true;
+          }
+          if (playerCantFit) continue;
+          
+          // Projectile motion
+          float h = tile.Key.y - otherTile.Key.y;
+          if (-h > jumpHeight) continue;
+          bool positiveH = h >= 0.0F;
+          float t = (vY + Mathf.Sqrt(vY * vY + 2.0F * g * ( positiveH ? h : 0.0F))) / g;
+          float d = vX * t * (positiveH ? 1.0F : 0.5F);
+          Vector2 diff = new Vector2(otherTile.Key.x, otherTile.Key.z) - new Vector2(tile.Key.x, tile.Key.z);
+          float dist = diff.magnitude;
+          
+          // If the player can reach the tile with a jump:
+          if (dist - 1.0F < d)
+          {
+            // Check if there are any blocks in the way
+            Vector2 dir = diff.normalized;
+            float interval = 0.1F;
+            for (float i = 0.0F; i < 1.0F; i += interval / t)
             {
-              if (_volume.voxels.ContainsKey(otherTile.Key + Vector3Int.up * i)) shoudAdd = false;
+              float it = interval / i;
+              Vector3 pos = new Vector3(diff.x * i + tile.Key.x, tile.Key.y + ((vY * it) - (g * it * it)), dir.y * i + tile.Key.z);
+              for (int j = 1; j < _player.controller.height + 1.0F; j++)
+              {
+                Vector3Int hitPos = Vector3Int.RoundToInt(pos + Vector3.up * j);
+                if (hitPos != otherTile.Key && _volume.voxels.ContainsKey(hitPos)) playerCantFit = true;
+              }
             }
-            if (!shoudAdd) continue;
-            toAdd.Add(otherTile.Key, tile.Value + 0.25F);
+            if (playerCantFit) continue;
+            toAdd.Add(otherTile.Key,tile.Value + (h <= 1.0F ? dist / speed : t));
           }
         }
       }
