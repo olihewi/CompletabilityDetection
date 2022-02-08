@@ -51,10 +51,6 @@ namespace Game.Abilities
     public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       Dictionary<Vector3Int, CompletabilityData> toAdd = new Dictionary<Vector3Int, CompletabilityData>();
-      Vector3Int[] directions = 
-      { Vector3Int.forward, Vector3Int.right, Vector3Int.back, Vector3Int.left,
-        //new Vector3Int(1,0,1), new Vector3Int(1,0,-1), new Vector3Int(-1,0,-1), new Vector3Int(-1,0,1)
-      };
 
       float jumpHeight = 0.01F;
       foreach (Player.AbilityInstance ability in _player.abilities)
@@ -113,10 +109,57 @@ namespace Game.Abilities
           }
         }
       }
-      foreach(KeyValuePair<Vector3Int,CompletabilityData> i in toAdd)
+
+      // Add to final grid
+      foreach (KeyValuePair<Vector3Int, CompletabilityData> tile in toAdd)
       {
-        _completabilityGrid.Add(i.Key,i.Value);
+        _completabilityGrid.Add(tile.Key,tile.Value);
       }
+      
+      // Optimise the path
+      foreach(KeyValuePair<Vector3Int,CompletabilityData> tile in _completabilityGrid)
+      {
+        foreach (KeyValuePair<Vector3Int, CompletabilityData> otherTile in _completabilityGrid)
+        {
+          if (tile.Key == otherTile.Key) continue;
+          // Projectile motion
+          float h = tile.Key.y - otherTile.Key.y;
+          if (-h > jumpHeight) continue;
+          bool positiveH = h >= 0.0F;
+          float t = (vY + Mathf.Sqrt(vY * vY + 2.0F * g * ( positiveH ? h : 0.0F))) / g;
+          float d = vX * t * (positiveH ? 1.0F : 0.5F);
+          Vector2 diff = new Vector2(otherTile.Key.x, otherTile.Key.z) - new Vector2(tile.Key.x, tile.Key.z);
+          float dist = diff.magnitude;
+          
+          // If the player can reach the tile with a jump:
+          if (dist - 1.0F < d)
+          {
+            // Check if there are any blocks in the way
+            Vector2 dir = diff.normalized;
+            float interval = 0.1F;
+            bool playerCantFit = false;
+            for (float i = 0.0F; i < 1.0F; i += interval / t)
+            {
+              float it = interval / i;
+              Vector3 pos = new Vector3(diff.x * i + tile.Key.x, tile.Key.y + ((vY * it) - (g * it * it)), diff.y * i + tile.Key.z);
+              for (float j = 1.0F; j < _player.controller.height + 1.0F; j++)
+              {
+                Vector3Int hitPos = Vector3Int.RoundToInt(pos + Vector3.up * j);
+                if (hitPos != otherTile.Key && _volume.voxels.ContainsKey(hitPos)) playerCantFit = true;
+              }
+            }
+            if (playerCantFit) continue;
+            float time = tile.Value.time + dist / speed;
+            if (time < otherTile.Value.time)
+            {
+              otherTile.Value.time = time;
+              otherTile.Value.from = tile.Key;
+            }
+          }
+        }
+      }
+      
+      
     }
   }
 }

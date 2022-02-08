@@ -102,9 +102,7 @@ namespace Voxels
         DrawFace(selection, buildMode == BuildMode.Place ? Color.green : buildMode == BuildMode.Replace ? Color.yellow : Color.red);
         if (displayCompletability && completabilityGrid.ContainsKey(selection.tile))
         {
-          Selection from = new Selection{tile = completabilityGrid[selection.tile].from, face = Vector3.up};
-          DrawFace(from, Color.magenta);
-          Handles.DrawLine(from.tile + Vector3.up * 0.5F,selection.tile + Vector3.up * 0.5F, 3.0F);
+          DrawPath(selection.tile);
         }
         EditorGUI.EndChangeCheck();
         if (e.type == EventType.MouseDown && e.button == 0)
@@ -169,6 +167,17 @@ namespace Voxels
         Handles.Label(face.tile + normal * 2.0F,completabilityGrid.ContainsKey(face.tile) ? completabilityGrid[face.tile].time.ToString("F1") + "s" : "Unreachable", style);
     }
 
+    private void DrawPath(Vector3Int start)
+    {
+      Vector3Int pos = start;
+      Handles.color = Color.magenta;
+      while (completabilityGrid.ContainsKey(pos) && pos != Vector3Int.zero && completabilityGrid[pos].from != pos)
+      {
+        Handles.DrawLine(pos + Vector3.up * 0.6F, completabilityGrid[pos].from + Vector3.up * 0.6F, 3.0F);
+        pos = completabilityGrid[pos].from;
+      }
+    }
+
     private void PaletteWindow(int id)
     {
       GUIContent[] contents = new GUIContent[volume.palette.Length];
@@ -223,6 +232,8 @@ namespace Voxels
       int lastCount = 0;
       player = GameObject.FindObjectOfType<Game.Player>();
       activeAbilities = player.abilities;
+      double lastWaitTime = EditorApplication.timeSinceStartup;
+      double oneFrame = 1.0D / 60.0D;
       while (completabilityGrid.Count > lastCount)
       {
         lastCount = completabilityGrid.Count;
@@ -230,10 +241,13 @@ namespace Voxels
         {
           if (!ability.enabled) continue;
           ability.ability.Traverse(completabilityGrid, volume, player);
+          if (EditorApplication.timeSinceStartup - lastWaitTime > oneFrame)
+          {
+            lastWaitTime = EditorApplication.timeSinceStartup;
+            yield return null;
+          }
         }
-        //yield return new EditorWaitForSeconds(0.05F);
       }
-      yield return null;
     }
     private void DrawCompletabilityGrid()
     {
