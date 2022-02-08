@@ -38,7 +38,7 @@ namespace Game.Abilities
         }
       }
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
+    public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       return;
     }

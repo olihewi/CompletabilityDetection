@@ -48,9 +48,9 @@ namespace Game.Abilities
       _player.animator.SetBool(ANIM_GROUNDED, _player.controller.isGrounded);
       if (horizontalVelocity.magnitude > 0.1F) _player.animator.transform.rotation = Quaternion.LookRotation(horizontalVelocity);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
+    public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
-      Dictionary<Vector3Int, float> toAdd = new Dictionary<Vector3Int, float>();
+      Dictionary<Vector3Int, CompletabilityData> toAdd = new Dictionary<Vector3Int, CompletabilityData>();
       Vector3Int[] directions = 
       { Vector3Int.forward, Vector3Int.right, Vector3Int.back, Vector3Int.left,
         //new Vector3Int(1,0,1), new Vector3Int(1,0,-1), new Vector3Int(-1,0,-1), new Vector3Int(-1,0,1)
@@ -68,12 +68,11 @@ namespace Game.Abilities
       float vX = speed;
       float vY = Mathf.Sqrt(-2.0F * -9.81F * jumpHeight);
       float g = -Physics.gravity.y;
-      foreach(KeyValuePair<Vector3Int, float> tile in _completabilityGrid)
+      foreach(KeyValuePair<Vector3Int, CompletabilityData> tile in _completabilityGrid)
       {
         foreach (KeyValuePair<Vector3Int, Voxels.Voxel> otherTile in _volume.voxels)
         {
-          // If the tile is already reachable, continue.
-          if (_completabilityGrid.ContainsKey(otherTile.Key) || toAdd.ContainsKey(otherTile.Key)) continue;
+          if (tile.Key == otherTile.Key || _completabilityGrid.ContainsKey(otherTile.Key) || toAdd.ContainsKey(otherTile.Key)) continue;
           
           // If the player can't fit, continue.
           bool playerCantFit = false;
@@ -101,19 +100,20 @@ namespace Game.Abilities
             for (float i = 0.0F; i < 1.0F; i += interval / t)
             {
               float it = interval / i;
-              Vector3 pos = new Vector3(diff.x * i + tile.Key.x, tile.Key.y + ((vY * it) - (g * it * it)), dir.y * i + tile.Key.z);
-              for (int j = 1; j < _player.controller.height + 1.0F; j++)
+              Vector3 pos = new Vector3(diff.x * i + tile.Key.x, tile.Key.y + ((vY * it) - (g * it * it)), diff.y * i + tile.Key.z);
+              for (float j = 1.0F; j < _player.controller.height + 1.0F; j++)
               {
                 Vector3Int hitPos = Vector3Int.RoundToInt(pos + Vector3.up * j);
                 if (hitPos != otherTile.Key && _volume.voxels.ContainsKey(hitPos)) playerCantFit = true;
               }
             }
             if (playerCantFit) continue;
-            toAdd.Add(otherTile.Key,tile.Value + (h <= 1.0F ? dist / speed : t));
+            float time = tile.Value.time + dist / speed;
+            toAdd.Add(otherTile.Key,new CompletabilityData{time = time, from = tile.Key});
           }
         }
       }
-      foreach(KeyValuePair<Vector3Int,float> i in toAdd)
+      foreach(KeyValuePair<Vector3Int,CompletabilityData> i in toAdd)
       {
         _completabilityGrid.Add(i.Key,i.Value);
       }

@@ -26,7 +26,7 @@ namespace Game.Abilities
       if (_player.controller.isGrounded && jumpAction.triggered)
         _player.velocity.y = Mathf.Sqrt(-2.0F * -9.81F * height);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
+    public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       // Handled by Movement
     }

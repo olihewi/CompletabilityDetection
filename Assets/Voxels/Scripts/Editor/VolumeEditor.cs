@@ -39,6 +39,11 @@ namespace Voxels
       public Vector3 face;
     }
 
+    private Vector3 V3IntToV3(Vector3Int _v)
+    {
+      return new Vector3(_v.x,_v.y,_v.z);
+    }
+
     private Rect paletteWindowRect;
     private Rect completabilityWindowRect;
 
@@ -95,6 +100,12 @@ namespace Voxels
       if (selection != null)
       {
         DrawFace(selection, buildMode == BuildMode.Place ? Color.green : buildMode == BuildMode.Replace ? Color.yellow : Color.red);
+        if (displayCompletability && completabilityGrid.ContainsKey(selection.tile))
+        {
+          Selection from = new Selection{tile = completabilityGrid[selection.tile].from, face = Vector3.up};
+          DrawFace(from, Color.magenta);
+          Handles.DrawLine(from.tile + Vector3.up * 0.5F,selection.tile + Vector3.up * 0.5F, 3.0F);
+        }
         EditorGUI.EndChangeCheck();
         if (e.type == EventType.MouseDown && e.button == 0)
         {
@@ -155,7 +166,7 @@ namespace Voxels
       GUIStyle style = new GUIStyle();
       style.normal.textColor = Color.black;
       if (displayCompletability)
-        Handles.Label(face.tile + normal * 2.0F,completabilityGrid.ContainsKey(face.tile) ? completabilityGrid[face.tile].ToString("F1") + "s" : "Unreachable", style);
+        Handles.Label(face.tile + normal * 2.0F,completabilityGrid.ContainsKey(face.tile) ? completabilityGrid[face.tile].time.ToString("F1") + "s" : "Unreachable", style);
     }
 
     private void PaletteWindow(int id)
@@ -179,6 +190,7 @@ namespace Voxels
     }
 
     private bool displayCompletability = false;
+
     private void CompletabilityWindow(int id)
     {
       bool newDisplayCompletability = GUI.Toggle(new Rect(10, 25, completabilityWindowRect.width - 20, 10), displayCompletability, " Enabled");
@@ -194,7 +206,10 @@ namespace Voxels
         i++;
       }
     }
-    private Dictionary<Vector3Int, float> completabilityGrid = new Dictionary<Vector3Int, float>();
+    
+    // LEVEL COMPLETABILITY
+
+    private Dictionary<Vector3Int, CompletabilityData> completabilityGrid = new Dictionary<Vector3Int, CompletabilityData>();
     private void GenerateCompletabilityGrid()
     {
       EditorCoroutineUtility.StartCoroutine(CompletabilityGeneration(), this);
@@ -204,7 +219,7 @@ namespace Voxels
     private IEnumerator CompletabilityGeneration()
     {
       completabilityGrid.Clear();
-      completabilityGrid.Add(Vector3Int.zero, 0.0F);
+      completabilityGrid.Add(Vector3Int.zero, new CompletabilityData{time = 0.0F, from = Vector3Int.zero});
       int lastCount = 0;
       player = GameObject.FindObjectOfType<Game.Player>();
       activeAbilities = player.abilities;
@@ -223,7 +238,7 @@ namespace Voxels
     private void DrawCompletabilityGrid()
     {
       Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
-      foreach (KeyValuePair<Vector3Int,float> tile in completabilityGrid)
+      foreach (KeyValuePair<Vector3Int,CompletabilityData> tile in completabilityGrid)
       {
         if (!volume.voxels.ContainsKey(tile.Key)) continue;
         Vector3[] verts =

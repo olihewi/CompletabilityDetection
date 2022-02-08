@@ -28,7 +28,7 @@ namespace Game.Abilities
       Vector2 lookInput = look.ReadValue<Vector2>() * distance;
       _player.cameraPivot.localPosition = Vector3.Lerp(_player.cameraPivot.localPosition, new Vector3(lookInput.x, _player.cameraPivot.localPosition.y, lookInput.y), lookSpeed * distance * Time.deltaTime);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Voxels.Volume _volume, Player _player)
+    public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Voxels.Volume _volume, Player _player)
     {
       return;
     }

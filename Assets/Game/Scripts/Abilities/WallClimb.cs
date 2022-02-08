@@ -60,23 +60,23 @@ namespace Game.Abilities
       _player.animator.SetFloat(ANIM_CLIMBX, climbDirection.x);
       _player.animator.SetFloat(ANIM_CLIMBY, climbDirection.y);
     }
-    public override void Traverse(Dictionary<Vector3Int, float> _completabilityGrid, Volume _volume, Player _player)
+    public override void Traverse(Dictionary<Vector3Int, CompletabilityData> _completabilityGrid, Volume _volume, Player _player)
     {
-      Dictionary<Vector3Int, float> toAdd = new Dictionary<Vector3Int, float>();
+      Dictionary<Vector3Int, CompletabilityData> toAdd = new Dictionary<Vector3Int, CompletabilityData>();
       Vector3Int[] directions =  { new Vector3Int(1,1,0), new Vector3Int(-1,1,0), new Vector3Int(0,1,1), new Vector3Int(0,1,-1), new Vector3Int(0,1,0),  };
 
-      foreach (KeyValuePair<Vector3Int, float> tile in _completabilityGrid)
+      foreach (KeyValuePair<Vector3Int, CompletabilityData> tile in _completabilityGrid)
       {
         foreach (Vector3Int direction in directions)
         {
           Vector3Int voxel = tile.Key + direction;
           if (_volume.voxels.ContainsKey(voxel) && climbable.Contains(_volume.voxels[voxel]) && !_completabilityGrid.ContainsKey(voxel) && !toAdd.ContainsKey(voxel))
           {
-            toAdd.Add(voxel, tile.Value + 0.5F / speed);
+            toAdd.Add(voxel, new CompletabilityData{time = tile.Value.time + 0.5F / speed, @from = tile.Key});
           }
         }
       }
-      foreach(KeyValuePair<Vector3Int,float> i in toAdd)
+      foreach(KeyValuePair<Vector3Int,CompletabilityData> i in toAdd)
       {
         _completabilityGrid.Add(i.Key,i.Value);
       }
