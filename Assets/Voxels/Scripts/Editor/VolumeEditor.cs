@@ -165,10 +165,6 @@ namespace Voxels
       Handles.DrawLine(b, c, thickness);
       Handles.DrawLine(c, d, thickness);
       Handles.DrawLine(d, a, thickness);
-      GUIStyle style = new GUIStyle();
-      style.normal.textColor = Color.black;
-      if (toolMode == ToolMode.Completability)
-        Handles.Label(face.tile + normal * 2.0F,completabilityGrid.ContainsKey(face.tile) ? completabilityGrid[face.tile].time.ToString("F1") + "s" : "Unreachable", style);
     }
 
     private void DrawPath(Vector3Int start)
@@ -179,7 +175,9 @@ namespace Voxels
       {
         Handles.DrawLine(pos + Vector3.up * 0.6F, completabilityGrid[pos].from + Vector3.up * 0.6F, 3.0F);
         pos = completabilityGrid[pos].from;
-      }
+      }GUIStyle style = new GUIStyle();
+      style.normal.textColor = Color.black;
+      Handles.Label(start + Vector3.up * 2.0F,completabilityGrid.ContainsKey(start) ? completabilityGrid[start].time.ToString("F1") + "s" : "Unreachable", style);
     }
 
     private void PaletteWindow(int id)
